@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // FIFA World Cup 26 — Live Dashboard (Production Build)
@@ -13,8 +13,9 @@ import React, { useState, useEffect, useMemo } from "react";
 // ═══════════════════════════════════════════════════════════════════════════
 
 const SOURCE_URL = "https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json";
-const DATA_AS_OF = "2026-06-24";
+const DATA_AS_OF = "2026-06-25";
 const COOLDOWN_MS = 20000;
+const LS_KEY = "wc26_api_key";
 
 const SNAPSHOT = {"name":"World Cup 2026","matches":[{"round":"Matchday 1","date":"2026-06-11","time":"13:00 UTC-6","team1":"Mexico","team2":"South Africa","score":{"ft":[2,0],"ht":[1,0]},"goals1":[{"name":"Julián Quiñones","minute":"9"},{"name":"Raúl Jiménez","minute":"67"}],"goals2":[],"group":"Group A","ground":"Mexico City"},{"round":"Matchday 1","date":"2026-06-11","time":"20:00 UTC-6","team1":"South Korea","team2":"Czech Republic","score":{"ft":[2,1],"ht":[0,0]},"goals1":[{"name":"Hwang In-Beom","minute":"67"},{"name":"Oh Hyeon-Gyu","minute":"80"}],"goals2":[{"name":"Ladislav Krejcí","minute":"59"}],"group":"Group A","ground":"Guadalajara (Zapopan)"},{"round":"Matchday 8","date":"2026-06-18","time":"12:00 UTC-4","team1":"Czech Republic","team2":"South Africa","score":{"ft":[1,1],"ht":[1,0]},"goals1":[{"name":"Michal Sadílek","minute":"6"}],"goals2":[{"name":"Teboho Mokoena","minute":"83","penalty":true}],"group":"Group A","ground":"Atlanta"},{"round":"Matchday 8","date":"2026-06-18","time":"19:00 UTC-6","team1":"Mexico","team2":"South Korea","score":{"ft":[1,0],"ht":[0,0]},"goals1":[{"name":"Luis Romo","minute":"50"}],"goals2":[],"group":"Group A","ground":"Guadalajara (Zapopan)"},{"round":"Matchday 14","date":"2026-06-24","time":"19:00 UTC-6","team1":"Czech Republic","team2":"Mexico","group":"Group A","ground":"Mexico City"},{"round":"Matchday 14","date":"2026-06-24","time":"19:00 UTC-6","team1":"South Africa","team2":"South Korea","group":"Group A","ground":"Monterrey (Guadalupe)"},{"round":"Matchday 2","date":"2026-06-12","time":"15:00 UTC-4","team1":"Canada","team2":"Bosnia & Herzegovina","score":{"ft":[1,1],"ht":[0,1]},"goals1":[{"name":"Cyle Larin","minute":"78"}],"goals2":[{"name":"Jovo Lukić","minute":"21"}],"group":"Group B","ground":"Toronto"},{"round":"Matchday 3","date":"2026-06-13","time":"12:00 UTC-7","team1":"Qatar","team2":"Switzerland","score":{"ft":[1,1],"ht":[0,1]},"goals1":[{"name":"Miro Muheim","minute":"90+4","owngoal":true}],"goals2":[{"name":"Breel Embolo","minute":"17","penalty":true}],"group":"Group B","ground":"San Francisco Bay Area (Santa Clara)"},{"round":"Matchday 8","date":"2026-06-18","time":"12:00 UTC-7","team1":"Switzerland","team2":"Bosnia & Herzegovina","score":{"ft":[4,1],"ht":[0,0]},"goals1":[{"name":"Johan Manzambi","minute":"74"},{"name":"Johan Manzambi","minute":"90"},{"name":"Rubén Vargas","minute":"84"},{"name":"Granit Xhaka","minute":"90+7","penalty":true}],"goals2":[{"name":"Ermin Mahmic","minute":"90+3"}],"group":"Group B","ground":"Los Angeles (Inglewood)"},{"round":"Matchday 8","date":"2026-06-18","time":"15:00 UTC-7","team1":"Canada","team2":"Qatar","score":{"ft":[6,0],"ht":[3,0]},"goals1":[{"name":"Cyle Larin","minute":"16"},{"name":"Jonathan David","minute":"29"},{"name":"Jonathan David","minute":"45+3"},{"name":"Nathan Saliba","minute":"64"},{"name":"Mohamed Manai","minute":"75","owngoal":true},{"name":"Jonathan David","minute":"90+2"}],"goals2":[],"group":"Group B","ground":"Vancouver"},{"round":"Matchday 14","date":"2026-06-24","time":"12:00 UTC-7","team1":"Switzerland","team2":"Canada","group":"Group B","ground":"Vancouver"},{"round":"Matchday 14","date":"2026-06-24","time":"12:00 UTC-7","team1":"Bosnia & Herzegovina","team2":"Qatar","group":"Group B","ground":"Seattle"},{"round":"Matchday 3","date":"2026-06-13","time":"18:00 UTC-4","team1":"Brazil","team2":"Morocco","score":{"ft":[1,1],"ht":[1,1]},"goals1":[{"name":"Vinícius Júnior","minute":"32"}],"goals2":[{"name":"Ismael Saibari","minute":"21"}],"group":"Group C","ground":"New York/New Jersey (East Rutherford)"},{"round":"Matchday 3","date":"2026-06-13","time":"21:00 UTC-4","team1":"Haiti","team2":"Scotland","score":{"ft":[0,1],"ht":[0,1]},"goals1":[],"goals2":[{"name":"John McGinn","minute":"28"}],"group":"Group C","ground":"Boston (Foxborough)"},{"round":"Matchday 9","date":"2026-06-19","time":"18:00 UTC-4","team1":"Scotland","team2":"Morocco","score":{"ft":[0,1],"ht":[0,1]},"goals1":[],"goals2":[{"name":"Ismael Saibari","minute":"2"}],"group":"Group C","ground":"Boston (Foxborough)"},{"round":"Matchday 9","date":"2026-06-19","time":"20:30 UTC-4","team1":"Brazil","team2":"Haiti","score":{"ft":[3,0],"ht":[3,0]},"goals1":[{"name":"Matheus Cunha","minute":"23"},{"name":"Matheus Cunha","minute":"36"},{"name":"Vinícius Júnior","minute":"45+3"}],"goals2":[],"group":"Group C","ground":"Philadelphia"},{"round":"Matchday 14","date":"2026-06-24","time":"18:00 UTC-4","team1":"Scotland","team2":"Brazil","group":"Group C","ground":"Miami (Miami Gardens)"},{"round":"Matchday 14","date":"2026-06-24","time":"18:00 UTC-4","team1":"Morocco","team2":"Haiti","group":"Group C","ground":"Atlanta"},{"round":"Matchday 2","date":"2026-06-12","time":"18:00 UTC-7","team1":"USA","team2":"Paraguay","score":{"ft":[4,1],"ht":[3,0]},"goals1":[{"name":"Damian Bobadilla","minute":"7","owngoal":true},{"name":"Folarin Balogun","minute":"31"},{"name":"Folarin Balogun","minute":"45+5"},{"name":"Giovanni Reyna","minute":"90+8"}],"goals2":[{"name":"Mauricio","minute":"73"}],"group":"Group D","ground":"Los Angeles (Inglewood)"},{"round":"Matchday 3","date":"2026-06-13","time":"21:00 UTC-7","team1":"Australia","team2":"Turkey","score":{"ft":[2,0],"ht":[1,0]},"goals1":[{"name":"Nestory Irankunda","minute":"27"},{"name":"Connor Metcalfe","minute":"75"}],"goals2":[],"group":"Group D","ground":"Vancouver"},{"round":"Matchday 9","date":"2026-06-19","time":"12:00 UTC-7","team1":"USA","team2":"Australia","score":{"ft":[2,0],"ht":[2,0]},"goals1":[{"name":"Cameron Burgess","minute":"11","owngoal":true},{"name":"Alex Freeman","minute":"43"}],"goals2":[],"group":"Group D","ground":"Seattle"},{"round":"Matchday 9","date":"2026-06-19","time":"20:00 UTC-7","team1":"Turkey","team2":"Paraguay","score":{"ft":[0,1],"ht":[0,1]},"goals1":[],"goals2":[{"name":"Matías Galarza","minute":"2"}],"group":"Group D","ground":"San Francisco Bay Area (Santa Clara)"},{"round":"Matchday 15","date":"2026-06-25","time":"19:00 UTC-7","team1":"Turkey","team2":"USA","group":"Group D","ground":"Los Angeles (Inglewood)"},{"round":"Matchday 15","date":"2026-06-25","time":"19:00 UTC-7","team1":"Paraguay","team2":"Australia","group":"Group D","ground":"San Francisco Bay Area (Santa Clara)"},{"round":"Matchday 4","date":"2026-06-14","time":"12:00 UTC-5","team1":"Germany","team2":"Curaçao","score":{"ft":[7,1],"ht":[3,1]},"goals1":[{"name":"Felix Nmecha","minute":"6"},{"name":"Nico Schlotterbeck","minute":"38"},{"name":"Kai Havertz","minute":"45+5","penalty":true},{"name":"Kai Havertz","minute":"88"},{"name":"Jamal Musiala","minute":"47"},{"name":"Nathaniel Brown","minute":"68"},{"name":"Deniz Undav","minute":"78"}],"goals2":[{"name":"Livano Comenencia","minute":"21"}],"group":"Group E","ground":"Houston"},{"round":"Matchday 4","date":"2026-06-14","time":"19:00 UTC-4","team1":"Ivory Coast","team2":"Ecuador","score":{"ft":[1,0],"ht":[0,0]},"goals1":[{"name":"Amad Diallo","minute":"90"}],"goals2":[],"group":"Group E","ground":"Philadelphia"},{"round":"Matchday 10","date":"2026-06-20","time":"16:00 UTC-4","team1":"Germany","team2":"Ivory Coast","score":{"ft":[2,1],"ht":[0,1]},"goals1":[{"name":"Deniz Undav","minute":"68"},{"name":"Deniz Undav","minute":"90+4"}],"goals2":[{"name":"Franck Kessié","minute":"30"}],"group":"Group E","ground":"Toronto"},{"round":"Matchday 10","date":"2026-06-20","time":"19:00 UTC-5","team1":"Ecuador","team2":"Curaçao","score":{"ft":[0,0],"ht":[0,0]},"group":"Group E","ground":"Kansas City"},{"round":"Matchday 15","date":"2026-06-25","time":"16:00 UTC-4","team1":"Curaçao","team2":"Ivory Coast","group":"Group E","ground":"Philadelphia"},{"round":"Matchday 15","date":"2026-06-25","time":"16:00 UTC-4","team1":"Ecuador","team2":"Germany","group":"Group E","ground":"New York/New Jersey (East Rutherford)"},{"round":"Matchday 4","date":"2026-06-14","time":"15:00 UTC-5","team1":"Netherlands","team2":"Japan","score":{"ft":[2,2],"ht":[0,0]},"goals1":[{"name":"Virgil van Dijk","minute":"51"},{"name":"Crysencio Summerville","minute":"64"}],"goals2":[{"name":"Keito Nakamura","minute":"57"},{"name":"Daichi Kamada","minute":"88"}],"group":"Group F","ground":"Dallas (Arlington)"},{"round":"Matchday 4","date":"2026-06-14","time":"20:00 UTC-6","team1":"Sweden","team2":"Tunisia","score":{"ft":[5,1],"ht":[2,1]},"goals1":[{"name":"Yasin Ayari","minute":"7"},{"name":"Yasin Ayari","minute":"90+6"},{"name":"Alexander Isak","minute":"30"},{"name":"Viktor Gyökeres","minute":"59"},{"name":"Mattias Svanberg","minute":"84"}],"goals2":[{"name":"Omar Rekik","minute":"43"}],"group":"Group F","ground":"Monterrey (Guadalupe)"},{"round":"Matchday 10","date":"2026-06-20","time":"12:00 UTC-5","team1":"Netherlands","team2":"Sweden","score":{"ft":[5,1],"ht":[2,0]},"goals1":[{"name":"Brian Brobbey","minute":"5"},{"name":"Brian Brobbey","minute":"17"},{"name":"Cody Gakpo","minute":"47"},{"name":"Cody Gakpo","minute":"54"},{"name":"Crysencio Summerville","minute":"89"}],"goals2":[{"name":"Anthony Elanga","minute":"59"}],"group":"Group F","ground":"Houston"},{"round":"Matchday 10","date":"2026-06-20","time":"22:00 UTC-6","team1":"Tunisia","team2":"Japan","score":{"ft":[0,4],"ht":[0,2]},"goals1":[],"goals2":[{"name":"Daichi Kamada","minute":"4"},{"name":"Ayase Ueda","minute":"31"},{"name":"Ayase Ueda","minute":"83"},{"name":"Junya Ito","minute":"69"}],"group":"Group F","ground":"Monterrey (Guadalupe)"},{"round":"Matchday 15","date":"2026-06-25","time":"18:00 UTC-5","team1":"Japan","team2":"Sweden","group":"Group F","ground":"Dallas (Arlington)"},{"round":"Matchday 15","date":"2026-06-25","time":"18:00 UTC-5","team1":"Tunisia","team2":"Netherlands","group":"Group F","ground":"Kansas City"},{"round":"Matchday 5","date":"2026-06-15","time":"12:00 UTC-7","team1":"Belgium","team2":"Egypt","score":{"ft":[1,1],"ht":[0,1]},"goals1":[{"name":"Mohamed Hany","minute":"66","owngoal":true}],"goals2":[{"name":"Emam Ashour","minute":"19"}],"group":"Group G","ground":"Seattle"},{"round":"Matchday 5","date":"2026-06-15","time":"18:00 UTC-7","team1":"Iran","team2":"New Zealand","score":{"ft":[2,2],"ht":[1,1]},"goals1":[{"name":"Ramin Rezaeian","minute":"32"},{"name":"Mohammad Mohebbi","minute":"64"}],"goals2":[{"name":"Elijah Just","minute":"7"},{"name":"Elijah Just","minute":"54"}],"group":"Group G","ground":"Los Angeles (Inglewood)"},{"round":"Matchday 11","date":"2026-06-21","time":"12:00 UTC-7","team1":"Belgium","team2":"Iran","score":{"ft":[0,0],"ht":[0,0]},"group":"Group G","ground":"Los Angeles (Inglewood)"},{"round":"Matchday 11","date":"2026-06-21","time":"18:00 UTC-7","team1":"New Zealand","team2":"Egypt","score":{"ft":[1,3],"ht":[1,0]},"goals1":[{"name":"Finn Surman","minute":"15"}],"goals2":[{"name":"Mostafa Zico","minute":"58"},{"name":"Mohamed Salah","minute":"67"},{"name":"Trézéguet","minute":"82"}],"group":"Group G","ground":"Vancouver"},{"round":"Matchday 16","date":"2026-06-26","time":"20:00 UTC-7","team1":"Egypt","team2":"Iran","group":"Group G","ground":"Seattle"},{"round":"Matchday 16","date":"2026-06-26","time":"20:00 UTC-7","team1":"New Zealand","team2":"Belgium","group":"Group G","ground":"Vancouver"},{"round":"Matchday 5","date":"2026-06-15","time":"12:00 UTC-4","team1":"Spain","team2":"Cape Verde","score":{"ft":[0,0],"ht":[0,0]},"group":"Group H","ground":"Atlanta"},{"round":"Matchday 5","date":"2026-06-15","time":"18:00 UTC-4","team1":"Saudi Arabia","team2":"Uruguay","score":{"ft":[1,1],"ht":[1,0]},"goals1":[{"name":"Abdulelah Al-Amri","minute":"41"}],"goals2":[{"name":"Maxi Araújo","minute":"80"}],"group":"Group H","ground":"Miami (Miami Gardens)"},{"round":"Matchday 11","date":"2026-06-21","time":"12:00 UTC-4","team1":"Spain","team2":"Saudi Arabia","score":{"ft":[4,0],"ht":[3,0]},"goals1":[{"name":"Lamine Yamal","minute":"10"},{"name":"Mikel Oyarzabal","minute":"21"},{"name":"Mikel Oyarzabal","minute":"24"},{"name":"Hassan Al-Tambakti","minute":"49","owngoal":true}],"goals2":[],"group":"Group H","ground":"Atlanta"},{"round":"Matchday 11","date":"2026-06-21","time":"18:00 UTC-4","team1":"Uruguay","team2":"Cape Verde","score":{"ft":[2,2],"ht":[2,1]},"goals1":[{"name":"Maxi Araújo","minute":"44"},{"name":"Agustín Cano","minute":"45+6"}],"goals2":[{"name":"Kevin Pina","minute":"21"},{"name":"Hélio Varela","minute":"61"}],"group":"Group H","ground":"Miami (Miami Gardens)"},{"round":"Matchday 16","date":"2026-06-26","time":"19:00 UTC-5","team1":"Cape Verde","team2":"Saudi Arabia","group":"Group H","ground":"Houston"},{"round":"Matchday 16","date":"2026-06-26","time":"18:00 UTC-6","team1":"Uruguay","team2":"Spain","group":"Group H","ground":"Guadalajara (Zapopan)"},{"round":"Matchday 6","date":"2026-06-16","time":"15:00 UTC-4","team1":"France","team2":"Senegal","score":{"ft":[3,1],"ht":[0,0]},"goals1":[{"name":"Kylian Mbappé","minute":"66"},{"name":"Kylian Mbappé","minute":"90+6"},{"name":"Bradley Barcola","minute":"82"}],"goals2":[{"name":"Ibrahim Mbaye","minute":"90+5"}],"group":"Group I","ground":"New York/New Jersey (East Rutherford)"},{"round":"Matchday 6","date":"2026-06-16","time":"18:00 UTC-4","team1":"Iraq","team2":"Norway","score":{"ft":[1,4],"ht":[1,2]},"goals1":[{"name":"Aymen Hussein","minute":"39"}],"goals2":[{"name":"Erling Haaland","minute":"29"},{"name":"Erling Haaland","minute":"43"},{"name":"Leo Østigard","minute":"76"},{"name":"Aymen Hussein","minute":"90+6","owngoal":true}],"group":"Group I","ground":"Boston (Foxborough)"},{"round":"Matchday 12","date":"2026-06-22","time":"17:00 UTC-4","team1":"France","team2":"Iraq","score":{"ft":[3,0],"ht":[1,0]},"goals1":[{"name":"Kylian Mbappé","minute":"14"},{"name":"Kylian Mbappé","minute":"54"},{"name":"Ousmane Dembélé","minute":"66"}],"goals2":[],"group":"Group I","ground":"Philadelphia"},{"round":"Matchday 12","date":"2026-06-22","time":"20:00 UTC-4","team1":"Norway","team2":"Senegal","score":{"ft":[3,2],"ht":[1,0]},"goals1":[{"name":"Marcus Holmgren Pedersen","minute":"43"},{"name":"Erling Haaland","minute":"48"},{"name":"Erling Haaland","minute":"58"}],"goals2":[{"name":"Ismaïla Sarr","minute":"53"},{"name":"Ismaïla Sarr","minute":"90+3"}],"group":"Group I","ground":"New York/New Jersey (East Rutherford)"},{"round":"Matchday 16","date":"2026-06-26","time":"15:00 UTC-4","team1":"Norway","team2":"France","group":"Group I","ground":"Boston (Foxborough)"},{"round":"Matchday 16","date":"2026-06-26","time":"15:00 UTC-4","team1":"Senegal","team2":"Iraq","group":"Group I","ground":"Toronto"},{"round":"Matchday 6","date":"2026-06-16","time":"20:00 UTC-5","team1":"Argentina","team2":"Algeria","score":{"ft":[3,0],"ht":[1,0]},"goals1":[{"name":"Lionel Messi","minute":"17"},{"name":"Lionel Messi","minute":"60"},{"name":"Lionel Messi","minute":"76"}],"goals2":[],"group":"Group J","ground":"Kansas City"},{"round":"Matchday 6","date":"2026-06-16","time":"21:00 UTC-7","team1":"Austria","team2":"Jordan","score":{"ft":[3,1],"ht":[1,0]},"goals1":[{"name":"Romano Schmid","minute":"21"},{"name":"Yazan Al-Arab","minute":"76","owngoal":true},{"name":"Marko Arnautovic","minute":"90+12","penalty":true}],"goals2":[{"name":"Ali Olwan","minute":"50"}],"group":"Group J","ground":"San Francisco Bay Area (Santa Clara)"},{"round":"Matchday 12","date":"2026-06-22","time":"12:00 UTC-5","team1":"Argentina","team2":"Austria","score":{"ft":[2,0],"ht":[1,0]},"goals1":[{"name":"Lionel Messi","minute":"38"},{"name":"Lionel Messi","minute":"90+5"}],"goals2":[],"group":"Group J","ground":"Dallas (Arlington)"},{"round":"Matchday 12","date":"2026-06-22","time":"20:00 UTC-7","team1":"Jordan","team2":"Algeria","score":{"ft":[1,2],"ht":[1,0]},"goals1":[{"name":"Nizar Al-Rashdan","minute":"36"}],"goals2":[{"name":"Nadhir Benbouali","minute":"69"},{"name":"Amine Gouiri","minute":"82"}],"group":"Group J","ground":"San Francisco Bay Area (Santa Clara)"},{"round":"Matchday 17","date":"2026-06-27","time":"21:00 UTC-5","team1":"Algeria","team2":"Austria","group":"Group J","ground":"Kansas City"},{"round":"Matchday 17","date":"2026-06-27","time":"21:00 UTC-5","team1":"Jordan","team2":"Argentina","group":"Group J","ground":"Dallas (Arlington)"},{"round":"Matchday 7","date":"2026-06-17","time":"12:00 UTC-5","team1":"Portugal","team2":"DR Congo","score":{"ft":[1,1],"ht":[1,1]},"goals1":[{"name":"João Neves","minute":"6"}],"goals2":[{"name":"Yoane Wissa","minute":"45+5"}],"group":"Group K","ground":"Houston"},{"round":"Matchday 7","date":"2026-06-17","time":"20:00 UTC-6","team1":"Uzbekistan","team2":"Colombia","score":{"ft":[1,3],"ht":[0,1]},"goals1":[{"name":"Abbosbek Fayzullaev","minute":"60"}],"goals2":[{"name":"Daniel Muñoz","minute":"40"},{"name":"Luis Díaz","minute":"65"},{"name":"Jáminton Campaz","minute":"90+9"}],"group":"Group K","ground":"Mexico City"},{"round":"Matchday 13","date":"2026-06-23","time":"12:00 UTC-5","team1":"Portugal","team2":"Uzbekistan","score":{"ft":[5,0],"ht":[3,0]},"goals1":[{"name":"Cristiano Ronaldo","minute":"6"},{"name":"Cristiano Ronaldo","minute":"39"},{"name":"Nuno Mendes","minute":"17"},{"name":"Abduvohid Nematov","minute":"60","owngoal":true},{"name":"Rafael Leão","minute":"87"}],"goals2":[],"group":"Group K","ground":"Houston"},{"round":"Matchday 13","date":"2026-06-23","time":"20:00 UTC-6","team1":"Colombia","team2":"DR Congo","score":{"ft":[1,0],"ht":[0,0]},"goals1":[{"name":"Daniel Muñoz","minute":"76"}],"goals2":[],"group":"Group K","ground":"Guadalajara (Zapopan)"},{"round":"Matchday 17","date":"2026-06-27","time":"19:30 UTC-4","team1":"Colombia","team2":"Portugal","group":"Group K","ground":"Miami (Miami Gardens)"},{"round":"Matchday 17","date":"2026-06-27","time":"19:30 UTC-4","team1":"DR Congo","team2":"Uzbekistan","group":"Group K","ground":"Atlanta"},{"round":"Matchday 7","date":"2026-06-17","time":"15:00 UTC-5","team1":"England","team2":"Croatia","score":{"ft":[4,2],"ht":[2,2]},"goals1":[{"name":"Harry Kane","minute":"12","penalty":true},{"name":"Harry Kane","minute":"42"},{"name":"Jude Bellingham","minute":"47"},{"name":"Marcus Rashford","minute":"85"}],"goals2":[{"name":"Martin Baturina","minute":"36"},{"name":"Petar Musa","minute":"45+5"}],"group":"Group L","ground":"Dallas (Arlington)"},{"round":"Matchday 7","date":"2026-06-17","time":"19:00 UTC-4","team1":"Ghana","team2":"Panama","score":{"ft":[1,0],"ht":[0,0]},"goals1":[{"name":"Caleb Yirenkyi","minute":"90+5"}],"goals2":[],"group":"Group L","ground":"Toronto"},{"round":"Matchday 13","date":"2026-06-23","time":"16:00 UTC-4","team1":"England","team2":"Ghana","score":{"ft":[0,0],"ht":[0,0]},"group":"Group L","ground":"Boston (Foxborough)"},{"round":"Matchday 13","date":"2026-06-23","time":"19:00 UTC-4","team1":"Panama","team2":"Croatia","score":{"ft":[0,1],"ht":[0,0]},"goals1":[],"goals2":[{"name":"Ante Budimir","minute":"54"}],"group":"Group L","ground":"Toronto"},{"round":"Matchday 17","date":"2026-06-27","time":"17:00 UTC-4","team1":"Panama","team2":"England","group":"Group L","ground":"New York/New Jersey (East Rutherford)"},{"round":"Matchday 17","date":"2026-06-27","time":"17:00 UTC-4","team1":"Croatia","team2":"Ghana","group":"Group L","ground":"Philadelphia"},{"round":"Round of 32","num":73,"date":"2026-06-28","time":"12:00 UTC-7","team1":"2A","team2":"2B","ground":"Los Angeles (Inglewood)"},{"round":"Round of 32","num":74,"date":"2026-06-29","time":"16:30 UTC-4","team1":"Germany","team2":"3A/B/C/D/F","ground":"Boston (Foxborough)"},{"round":"Round of 32","num":75,"date":"2026-06-29","time":"19:00 UTC-6","team1":"1F","team2":"2C","ground":"Monterrey (Guadalupe)"},{"round":"Round of 32","num":76,"date":"2026-06-29","time":"12:00 UTC-5","team1":"1C","team2":"2F","ground":"Houston"},{"round":"Round of 32","num":77,"date":"2026-06-30","time":"17:00 UTC-4","team1":"1I","team2":"3C/D/F/G/H","ground":"New York/New Jersey (East Rutherford)"},{"round":"Round of 32","num":78,"date":"2026-06-30","time":"12:00 UTC-5","team1":"2E","team2":"2I","ground":"Dallas (Arlington)"},{"round":"Round of 32","num":79,"date":"2026-06-30","time":"19:00 UTC-6","team1":"Mexico","team2":"3C/E/F/H/I","ground":"Mexico City"},{"round":"Round of 32","num":80,"date":"2026-07-01","time":"12:00 UTC-4","team1":"1L","team2":"3E/H/I/J/K","ground":"Atlanta"},{"round":"Round of 32","num":81,"date":"2026-07-01","time":"17:00 UTC-7","team1":"USA","team2":"3B/E/F/I/J","ground":"San Francisco Bay Area (Santa Clara)"},{"round":"Round of 32","num":82,"date":"2026-07-01","time":"13:00 UTC-7","team1":"1G","team2":"3A/E/H/I/J","ground":"Seattle"},{"round":"Round of 32","num":83,"date":"2026-07-02","time":"19:00 UTC-4","team1":"2K","team2":"2L","ground":"Toronto"},{"round":"Round of 32","num":84,"date":"2026-07-02","time":"12:00 UTC-7","team1":"1H","team2":"2J","ground":"Los Angeles (Inglewood)"},{"round":"Round of 32","num":85,"date":"2026-07-02","time":"20:00 UTC-7","team1":"1B","team2":"3E/F/G/I/J","ground":"Vancouver"},{"round":"Round of 32","num":86,"date":"2026-07-03","time":"18:00 UTC-4","team1":"1J","team2":"2H","ground":"Miami (Miami Gardens)"},{"round":"Round of 32","num":87,"date":"2026-07-03","time":"20:30 UTC-5","team1":"1K","team2":"3D/E/I/J/L","ground":"Kansas City"},{"round":"Round of 32","num":88,"date":"2026-07-03","time":"13:00 UTC-5","team1":"2D","team2":"2G","ground":"Dallas (Arlington)"},{"round":"Round of 16","num":89,"date":"2026-07-04","time":"17:00 UTC-4","team1":"W74","team2":"W77","ground":"Philadelphia"},{"round":"Round of 16","num":90,"date":"2026-07-04","time":"12:00 UTC-5","team1":"W73","team2":"W75","ground":"Houston"},{"round":"Round of 16","num":91,"date":"2026-07-05","time":"16:00 UTC-4","team1":"W76","team2":"W78","ground":"New York/New Jersey (East Rutherford)"},{"round":"Round of 16","num":92,"date":"2026-07-05","time":"18:00 UTC-6","team1":"W79","team2":"W80","ground":"Mexico City"},{"round":"Round of 16","num":93,"date":"2026-07-06","time":"14:00 UTC-5","team1":"W83","team2":"W84","ground":"Dallas (Arlington)"},{"round":"Round of 16","num":94,"date":"2026-07-06","time":"17:00 UTC-7","team1":"W81","team2":"W82","ground":"Seattle"},{"round":"Round of 16","num":95,"date":"2026-07-07","time":"12:00 UTC-4","team1":"W86","team2":"W88","ground":"Atlanta"},{"round":"Round of 16","num":96,"date":"2026-07-07","time":"13:00 UTC-7","team1":"W85","team2":"W87","ground":"Vancouver"},{"round":"Quarter-final","num":97,"date":"2026-07-09","time":"16:00 UTC-4","team1":"W89","team2":"W90","ground":"Boston (Foxborough)"},{"round":"Quarter-final","num":98,"date":"2026-07-10","time":"12:00 UTC-7","team1":"W93","team2":"W94","ground":"Los Angeles (Inglewood)"},{"round":"Quarter-final","num":99,"date":"2026-07-11","time":"17:00 UTC-4","team1":"W91","team2":"W92","ground":"Miami (Miami Gardens)"},{"round":"Quarter-final","num":100,"date":"2026-07-11","time":"20:00 UTC-5","team1":"W95","team2":"W96","ground":"Kansas City"},{"round":"Semi-final","num":101,"date":"2026-07-14","time":"14:00 UTC-5","team1":"W97","team2":"W98","ground":"Dallas (Arlington)"},{"round":"Semi-final","num":102,"date":"2026-07-15","time":"15:00 UTC-4","team1":"W99","team2":"W100","ground":"Atlanta"},{"round":"Match for third place","num":103,"date":"2026-07-18","time":"17:00 UTC-4","team1":"L101","team2":"L102","ground":"Miami (Miami Gardens)"},{"round":"Final","num":104,"date":"2026-07-19","time":"15:00 UTC-4","team1":"W101","team2":"W102","ground":"New York/New Jersey (East Rutherford)"}]};
 
@@ -211,6 +212,8 @@ export default function App() {
   const [detail, setDetail] = useState(null);
   const [share, setShare] = useState(null);
   const [shareErr, setShareErr] = useState("");
+  const [apiKey, setApiKey] = useState(() => { try { return localStorage.getItem(LS_KEY)||""; } catch(e){ return ""; } });
+  const [showKeyInput, setShowKeyInput] = useState(false);
 
   const matches = data.matches||[];
   const groupTables = useMemo(() => computeGroups(matches), [matches]);
@@ -219,16 +222,16 @@ export default function App() {
   const groupGames = matches.filter(m=>m.group);
   const played = groupGames.filter(m=>m.score?.ft).length;
   const today = todayISO();
-  const todayMatches = matches.filter(m => matchDateLuanda(m)===today);
+  const todayMatches = matches.filter(m => matchDateLuanda(m)===today && (m.group || m.score?.ft));
   const ageDays = Math.max(0,Math.floor((Date.parse(today)-Date.parse(dataAsOf))/86400000));
-  const stale = status!=="live" && ageDays>=2;
+  const stale = status!=="live" && ageDays>=1;
   const hasUnverified = matches.some(m=>m.src==="web"&&m.score?.ft);
 
-  // ── Refresh ──────────────────────────────────────────────────────────────
-  function mergeResults(arr) {
+  // ── Refresh ────────────────────────────────────────────────────────────────────────────
+  function mergeResults(currentMatches, arr) {
     const idx = {};
-    matches.forEach((m,i) => { if(m.group) idx[[canon(m.team1),canon(m.team2)].sort().join("|")]=i; });
-    const next = matches.map(m=>({...m}));
+    currentMatches.forEach((m,i) => { if(m.group) idx[[canon(m.team1),canon(m.team2)].sort().join("|")]=i; });
+    const next = currentMatches.map(m=>({...m}));
     let filled=0, corrected=0;
     for (const r of arr) {
       if (!r?.s || !Array.isArray(r.s) || r.s.length!==2) continue;
@@ -246,9 +249,11 @@ export default function App() {
   }
 
   function extractArray(text) {
-    const m = text.match(/\[[\s\S]*\]/);
-    if (!m) return null;
-    let s = m[0];
+    // Extract the first standalone JSON array, avoiding nested ones inside objects
+    const standalone = text.match(/(?:^|[\s,:\[])([\[][\s\S]*?[\]])(?=[\s,:\]]|$)/);
+    const raw = standalone ? standalone[1] : text.match(/\[[\s\S]*\]/)?.[0];
+    if (!raw) return null;
+    let s = raw;
     for (let k=0;k<3;k++) {
       try { const v=JSON.parse(s); if(Array.isArray(v)) return v; } catch(e){}
       const cut=s.lastIndexOf("]",s.length-2); if(cut<0)break; s=s.slice(0,cut+1);
@@ -256,42 +261,52 @@ export default function App() {
     return null;
   }
 
-  async function refresh(auto) {
+  const refresh = useCallback(async (auto) => {
     const now=Date.now();
     if (!auto && now-lastRefresh<COOLDOWN_MS) { setNote("Just refreshed \u2014 wait a few seconds."); return; }
+    if (status==="loading") return;
     setLastRefresh(now); setStatus("loading"); setNote("\uD83D\uDD0D Searching for latest results\u2026");
     const errors=[];
+    const key = apiKey || (typeof window!=="undefined" && window.ANTHROPIC_API_KEY) || "";
 
-    // Path 1: Claude API + web search (works inside artifact sandbox)
-    try {
-      const names = Object.keys(FLAGS).join(", ");
-      const r = await fetch("https://api.anthropic.com/v1/messages", {
-        method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({
-          model:"claude-sonnet-4-6", max_tokens:2048,
-          messages:[{role:"user",content:
-            "Search the web for ALL 2026 FIFA World Cup group stage results played so far. "+
-            "Today is "+today+". Return ONLY a JSON array, no prose, no markdown. "+
-            "Each item: {\"a\":\"Home\",\"b\":\"Away\",\"s\":[hg,ag]}. "+
-            "Use EXACTLY these team names: "+names+". Include every played match. Omit unplayed."}],
-          tools:[{type:"web_search_20250305",name:"web_search"}],
-        }),
-      });
-      if (!r.ok) { const b=await r.text().catch(()=>""); throw new Error("API "+r.status+": "+b.slice(0,80)); }
-      const d = await r.json();
-      const text = (d.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("\n");
-      const arr = extractArray(text);
-      if (!arr||arr.length===0) throw new Error("no parseable results");
-      const {next,filled,corrected,total} = mergeResults(arr);
-      if (total>0) {
-        setData({...data,matches:next}); setStatus("live"); setUpdated(new Date()); setDataAsOf(todayISO());
-        const p=[]; if(filled)p.push(filled+" new"); if(corrected)p.push(corrected+" corrected");
-        setNote("\u2705 Updated: "+p.join(", ")+" result"+(total>1?"s":"")+" via web search.");
-        return;
-      }
-      setStatus("live"); setUpdated(new Date()); setDataAsOf(todayISO());
-      setNote("\u2705 All "+arr.length+" results matched \u2014 standings are current."); return;
-    } catch(e) { errors.push("Web search: "+(e.message||String(e))); }
+    // Path 1: Claude API + web search
+    if (key) {
+      try {
+        const names = Object.keys(FLAGS).join(", ");
+        const r = await fetch("https://api.anthropic.com/v1/messages", {
+          method:"POST",
+          headers:{"Content-Type":"application/json","x-api-key":key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+          body: JSON.stringify({
+            model:"claude-sonnet-4-6", max_tokens:2048,
+            messages:[{role:"user",content:
+              "Search the web for ALL 2026 FIFA World Cup group stage results played so far. "+
+              "Today is "+todayISO()+". Return ONLY a JSON array, no prose, no markdown. "+
+              "Each item: {\"a\":\"Home\",\"b\":\"Away\",\"s\":[hg,ag]}. "+
+              "Use EXACTLY these team names: "+names+". Include every played match. Omit unplayed."}],
+            tools:[{type:"web_search_20250305",name:"web_search"}],
+          }),
+        });
+        if (!r.ok) { const b=await r.text().catch(()=>""); throw new Error("API "+r.status+": "+b.slice(0,80)); }
+        const d = await r.json();
+        const text = (d.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("\n");
+        const arr = extractArray(text);
+        if (!arr||arr.length===0) throw new Error("no parseable results");
+        setData(prev => {
+          const cur = prev.matches||[];
+          const {next,filled,corrected,total} = mergeResults(cur, arr);
+          if (total>0) {
+            const p=[]; if(filled)p.push(filled+" new"); if(corrected)p.push(corrected+" corrected");
+            setTimeout(()=>setNote("\u2705 Updated: "+p.join(", ")+" result"+(total>1?"s":"")+" via web search."),0);
+          } else {
+            setTimeout(()=>setNote("\u2705 All "+arr.length+" results matched \u2014 standings are current."),0);
+          }
+          return {...prev, matches:next};
+        });
+        setStatus("live"); setUpdated(new Date()); setDataAsOf(todayISO()); return;
+      } catch(e) { errors.push("Web search: "+(e.message||String(e))); }
+    } else {
+      errors.push("Web search: no API key (tap the key \u{1F511} icon to add one)");
+    }
 
     // Path 2: GitHub raw (fallback)
     try {
@@ -306,7 +321,8 @@ export default function App() {
 
     setStatus("snapshot");
     setNote("\u26A0 Could not update. Showing embedded data ("+played+" matches, as of "+dataAsOf+"). Errors: "+errors.join(" | "));
-  }
+  }, [apiKey, lastRefresh, status, played, dataAsOf]);
+
   useEffect(() => { refresh(true); }, []);
 
   // ── Share System ─────────────────────────────────────────────────────────
@@ -377,8 +393,13 @@ export default function App() {
                 <div style={{fontSize:11,color:C.faint,marginTop:2}}>{status==="live"&&updated?"Updated "+updated.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}):"Data as of "+asOfLabel}</div>
               </div>
               <Btn onClick={shareStandings} ghost>Share</Btn>
+              <button onClick={()=>setShowKeyInput(v=>!v)} title={apiKey?"API key set":"Add API key for live updates"} style={{cursor:"pointer",background:"none",border:`1px solid ${apiKey?C.green:C.line}`,color:apiKey?C.green:C.muted,padding:"10px 11px",borderRadius:8,fontSize:14,lineHeight:1}}>\uD83D\uDD11</button>
               <Btn onClick={()=>refresh(false)} disabled={status==="loading"}>{status==="loading"?"\u2026":"Refresh"}</Btn>
             </div>
+            {showKeyInput&&<div style={{marginTop:10,display:"flex",gap:8,alignItems:"center",animation:"fade .2s"}}>
+              <input type="password" value={apiKey} onChange={e=>{const v=e.target.value.trim();setApiKey(v);try{v?localStorage.setItem(LS_KEY,v):localStorage.removeItem(LS_KEY);}catch(ex){}}} placeholder="Paste Anthropic API key for live web search" style={{flex:1,background:C.panel2,border:`1px solid ${C.line}`,color:C.chalk,padding:"9px 11px",borderRadius:8,fontSize:13,outline:"none"}} />
+              <Btn onClick={()=>{setShowKeyInput(false);if(apiKey)refresh(false);}}>OK</Btn>
+            </div>}
           </div>
 
           <div style={{marginTop:16}}>
@@ -677,9 +698,8 @@ async function drawStandings(gt,played,total,dataAsOf,unv) {
       x.textAlign="left";
     });
   });
-  x.textAlign="left";x.fillStyle=K.FAINT;x.font=`400 22px ${F.S}`;
-  x.fillText(`Top 2 per group \u00b7 data as of ${dataAsOf}`,60,H-40);
-  if(unv){x.fillStyle=K.GOLD;x.font=`600 22px ${F.S}`;x.fillText("\u26A0 includes unverified web-search results",60,H-14);}
+  dFooter(x,W,H,dataAsOf);
+  if(unv){x.textAlign="left";x.fillStyle=K.GOLD;x.font=`600 20px ${F.S}`;x.fillText("\u26A0 includes unverified web-search results",60,H-14);}
   return c;
 }
 
@@ -770,7 +790,7 @@ async function drawThirds(thirds,dataAsOf) {
   x.fillStyle=K.MUTE;x.font=`400 22px ${F.S}`;x.fillText("Top 8 qualify for the Round of 32",W/2,172);
   const top=210,rh=62;
   ranked.forEach((t,i)=>{
-    const ry=top+i*rh,q=i<8,cut=i===7;
+    const ry=top+i*rh,q=i<8,cut=i===7||(i===ranked.length-1&&ranked.length<8&&ranked.length>0);
     x.fillStyle=q?"rgba(239,193,91,0.08)":K.PANEL;rr(x,60,ry,W-120,rh-6,10);x.fill();
     x.strokeStyle=q?"rgba(239,193,91,0.3)":K.LINE;x.lineWidth=1;rr(x,60,ry,W-120,rh-6,10);x.stroke();
     x.fillStyle=q?K.GOLD:K.FAINT;x.font=`700 28px ${F.A}`;x.textAlign="center";x.fillText(String(i+1),100,ry+40);
